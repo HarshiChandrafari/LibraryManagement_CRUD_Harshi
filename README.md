@@ -48,3 +48,4 @@ python app.py
 
 ## Troubleshooting
 - Delete `library.db` to reset database
+I tried implementing authentication but was facing some issues, but I can do it with some more time.
