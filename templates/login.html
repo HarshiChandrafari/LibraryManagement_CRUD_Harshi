@@ -39,7 +39,6 @@
                 if (response.ok) {
                     // Save the access token to local storage or a cookie
                     localStorage.setItem('access_token', data.access_token);
-                    window.location.href = '/';
                 } else {
                     document.getElementById('login-message').classList.add('alert-danger');
                     document.getElementById('login-message').classList.remove('alert-success');

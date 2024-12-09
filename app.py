@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -8,46 +7,25 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt()
-# from werkzeug.security import generate_password_hash, check_password_hash
-
-
-# Determine the absolute path for the database file
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'library.db')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'  # Important for flash messages
+app.config['SECRET_KEY'] = 'your_secret_key_here'
 CORS(app)
 
-# Configure the SQLite database
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Configure JWT
 app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'
 jwt = JWTManager(app)
 
-# User Model
-# class User(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     username = db.Column(db.String(100), nullable=False, unique=True)
-#     password_hash = db.Column(db.String(255), nullable=False)
-
-#     def set_password(self, password):
-#         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-#     def check_password(self, password):
-#         return bcrypt.check_password_hash(self.password_hash, password)
-
-# Database Model for User
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), nullable=False, unique=True)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
 
-
-# Book Model
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -78,109 +56,118 @@ class Member(db.Model):
             'email': self.email,
             'membership_date': self.membership_date.isoformat()
         }
-    
-with app.app_context():
-    db.create_all()  # Create tables
 
-# Home Route
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('dashboard.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    print("entered login")
+    if request.method == 'POST':
+        # Check if it's JSON or form data
+        if request.is_json:
+            data = request.get_json()
+            username = data.get('username')
+            password = data.get('password')
+        else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+
+        # Validate input
+        if not username or not password:
+            print("Username or password is missing.")
+            return jsonify({
+                'success': False, 
+                'message': 'Username and password are required'
+            }), 400
+
+        print(f"Attempting login with username: {username}")
+
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            print(f"User found: {user.username}")
+            try:
+                if bcrypt.check_password_hash(user.password, password):
+                    print("Password is correct.")
+
+                    return redirect(url_for('dashboard'))
+                    
+                else:
+                    print("Incorrect password.")
+                    return jsonify({
+                        'success': False, 
+                        'message': 'Invalid username or password'
+                    }), 401
+            except Exception as e:
+                print(f"Password verification error: {str(e)}")
+                return jsonify({
+                    'success': False, 
+                    'message': 'Authentication error'
+                }), 500
+        else:
+            print("User not found.")
+            return jsonify({
+                'success': False, 
+                'message': 'Invalid username or password'
+            }), 404
+
+    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        # Check if user already exists
+        username = request.form['username']
+        password = request.form['password']
+        
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash('Username already exists', 'error')
             return redirect(url_for('register'))
-
-        # Create new user
-        new_user = User(username=username)
-        new_user.set_password(password)
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        new_user = User(username=username, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
-
-        # Generate access token
-        access_token = create_access_token(identity=new_user.id)
-        flash('Registration successful', 'success')
-
-        # Store the token in a session or return it in the response
-        response = redirect(url_for('dashboard'))
-        return response
-
+        
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+    
     return render_template('register.html')
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        # Debugging
-        print(f"Attempting to login with username: {username}")
-
-        # Check if user exists and password is correct
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            print("User not found.")
-            flash('Invalid username or password', 'error')
-            return redirect(url_for('login'))
-
-        if not user.check_password(password):
-            print("Incorrect password.")
-            flash('Invalid username or password', 'error')
-            return redirect(url_for('login'))
-
-        # Generate access token
-        access_token = create_access_token(identity=user.id)
-        print(f"Generated access token: {access_token}")
-
-        flash('Login successful', 'success')
-        return redirect(url_for('dashboard'))
-
-    return render_template('login.html')
-
-
-
-
 @app.route('/dashboard')
-# @jwt_required()
 def dashboard():
-    # current_user_id = get_jwt_identity()
-    # user = User.query.get(current_user_id)
-    # Pass the username or user data to the template
-    return render_template('dashboard.html')
+    print("Entered dashboard route")
+    try:
+        print("hiii")
+        return render_template('dashboard.html')
+    except Exception as e:
+        print(f"Error in dashboard route: {str(e)}")
+        flash('An error occurred while accessing the dashboard', 'error')
+        return redirect(url_for('login'))
+    
 
 
 @app.route('/logout')
 def logout():
-    # In a real app, you'd invalidate the token here
     flash('You have been logged out', 'success')
     return redirect(url_for('home'))
 
 
-# Books Routes
 @app.route('/books/add', methods=['GET', 'POST'])
 def add_book():
     if request.method == 'POST':
-        # Get form data
+
         title = request.form['title']
         author = request.form['author']
         isbn = request.form['isbn']
-        
-        # Check if book already exists
+
         existing_book = Book.query.filter_by(isbn=isbn).first()
         if existing_book:
             flash('A book with this ISBN already exists!', 'danger')
             return render_template('add_book.html')
         
-        # Create new book
         new_book = Book(title=title, author=author, isbn=isbn)
         
         try:
@@ -200,21 +187,17 @@ def view_books():
     books = Book.query.paginate(page=page, per_page=10)
     return render_template('view_books.html', books=books)
 
-# Members Routes
 @app.route('/members/add', methods=['GET', 'POST'])
 def add_member():
     if request.method == 'POST':
-        # Get form data
         name = request.form['name']
         email = request.form['email']
         
-        # Check if member already exists
         existing_member = Member.query.filter_by(email=email).first()
         if existing_member:
             flash('A member with this email already exists!', 'danger')
             return render_template('add_member.html')
         
-        # Create new member
         new_member = Member(name=name, email=email)
         
         try:
@@ -233,7 +216,7 @@ def view_members():
     members = Member.query.all()
     return render_template('view_members.html', members=members)
 
-# Delete Routes
+
 @app.route('/books/delete/<int:book_id>', methods=['POST'])
 def delete_book(book_id):
     book = Book.query.get_or_404(book_id)
@@ -258,10 +241,9 @@ def delete_member(member_id):
         flash(f'Error deleting member: {str(e)}', 'danger')
     return redirect(url_for('view_members'))
 
-# Initialize Database
 def init_db():
     with app.app_context():
-        db.create_all()
+        db.create_all() 
 
 if __name__ == '__main__':
     init_db()
