@@ -36,7 +36,15 @@ python app.py
 
   
 ## Screeshots of Application
+![Home Page](1.png)
 
+![Home Page](2.png)
+
+![Home Page](3.png)
+
+![Home Page](4.png)
+
+![Home Page](5.png)
 
 ## Troubleshooting
 - Delete `library.db` to reset database
