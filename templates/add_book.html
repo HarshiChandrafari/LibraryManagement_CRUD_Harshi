@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Add Book{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="text-center">Add New Book</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_book') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Book Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="author" class="form-label">Author</label>
+                        <input type="text" class="form-control" id="author" name="author" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="isbn" class="form-label">ISBN</label>
+                        <input type="text" class="form-control" id="isbn" name="isbn" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add Book</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

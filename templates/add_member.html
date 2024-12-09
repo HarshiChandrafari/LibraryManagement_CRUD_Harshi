@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Add Member{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="text-center">Add New Member</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_member') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Register Member</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Library Management - Login{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <h1 class="display-4 mb-4">Login</h1>
+    <form method="post" id="login-form" class="mb-4">
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username"
+                required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password"
+                required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <div id="login-message" class="alert" role="alert"></div>
+</div>
+
+{% block scripts %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (response.ok) {
+                    // Save the access token to local storage or a cookie
+                    localStorage.setItem('access_token', data.access_token);
+                    window.location.href = '/';
+                } else {
+                    document.getElementById('login-message').classList.add('alert-danger');
+                    document.getElementById('login-message').classList.remove('alert-success');
+                    document.getElementById('login-message').textContent = data.message;
+                }
+            })
+            .catch(error => {
+                document.getElementById('login-message').classList.add('alert-danger');
+                document.getElementById('login-message').classList.remove('alert-success');
+                document.getElementById('login-message').textContent = 'An error occurred during login.';
+            });
+    });
+</script>
+{% endblock %}
+</div>
+{% endblock %}
